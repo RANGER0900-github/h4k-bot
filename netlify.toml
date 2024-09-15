@@ -1,0 +1,13 @@
+[build]
+  functions = "netlify-functions"
+  publish = "static"
+
+[[redirects]]
+  from = "/capture"
+  to = "/.netlify/functions/handler"
+  status = 200
+
+[[redirects]]
+  from = "/redirect"
+  to = "/.netlify/functions/handler"
+  status = 302
